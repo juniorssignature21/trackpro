@@ -1,7 +1,8 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useSettings } from '../lib/settings';
+import Logo from './Logo';
 
-const APP_ICON = '/branding/appicon_5fdbf0afc4-192.png';
+const APP_ICON = '/branding/vdc-icon-192.png';
 
 export default function Footer() {
   const s = useSettings();
@@ -11,33 +12,27 @@ export default function Footer() {
         <div className="row g-4">
           <div className="col-lg-4">
             <span className="tp-logo text-white">
-              <img src="/branding/logolight_7df7d148ec.png" alt="TrackPro Logistics" className="tp-logo-img" style={{ height: 55, width: 'auto' }} />
+              <Logo light height={46} className="tp-logo-img" />
             </span>
-            <p className="mt-3 text-white-50">Delivery, tracked to the metre. Send, track and pay for deliveries from one beautiful app.</p>
-            <div className="tp-social">
-              <a href="#" aria-label="Instagram"><i className="bi bi-instagram" /></a>
-              <a href="#" aria-label="X"><i className="bi bi-twitter-x" /></a>
-              <a href="#" aria-label="LinkedIn"><i className="bi bi-linkedin" /></a>
-              <a href="#" aria-label="TikTok"><i className="bi bi-tiktok" /></a>
-            </div>
+            <p className="mt-3 text-white-50">Same-day, time-definite and international express shipping from the US to 200+ countries. Instant quotes, card payment and live tracking.</p>
           </div>
           <div className="col-6 col-lg-2">
-            <h6>Send</h6>
-            <Link to="/services#domestic">Domestic</Link><Link to="/services#international">International</Link>
-            <Link to="/services#express">Same day</Link><Link to="/quote">Get a quote</Link>
+            <h2 className="h6">Ship</h2>
+            <Link to="/services#sdx">Same Day</Link><Link to="/services#x09">Express 9:00</Link>
+            <Link to="/services#xpd">International Express</Link><Link to="/quote">Quote &amp; book</Link>
           </div>
           <div className="col-6 col-lg-2">
-            <h6>Receive</h6>
-            <Link to="/track">Track a parcel</Link><Link to="/help">Delivery options</Link>
+            <h2 className="h6">Receive</h2>
+            <Link to="/track">Track a shipment</Link><Link to="/help">Delivery options</Link>
             <Link to="/help#returns">Returns</Link><Link to="/receipt">Find a receipt</Link>
           </div>
           <div className="col-6 col-lg-2">
-            <h6>Company</h6>
+            <h2 className="h6">Company</h2>
             <Link to="/about">About us</Link><Link to="/business">Business</Link>
-            <Link to="/contact">Contact</Link><Link to="/help">Help centre</Link>
+            <Link to="/contact">Contact</Link><Link to="/help">Help center</Link>
           </div>
           <div className="col-6 col-lg-2">
-            <h6>Get in touch</h6>
+            <h2 className="h6">Get in touch</h2>
             <p className="small text-white-50 mb-1">{s.company_address}</p>
             <a href={`mailto:${s.company_email}`}>{s.company_email}</a>
             <a href={`tel:${s.company_phone}`}>{s.company_phone}</a>
@@ -45,7 +40,7 @@ export default function Footer() {
         </div>
         <div className="tp-getapp">
           <img src={APP_ICON} alt="" width="64" height="64" />
-          <div className="flex-grow-1"><b>Get the TrackPro app</b>
+          <div className="flex-grow-1"><b>Get the VDC Express app</b>
             <span>Live tracking, receipts and quotes on your home screen. Free, no app store needed.</span></div>
           <div className="tp-getapp-btns">
             <button type="button" className="btn tp-store" data-install><i className="bi bi-apple" /><span><small>Install on</small>iPhone</span></button>
@@ -54,7 +49,7 @@ export default function Footer() {
         </div>
         <div className="tp-footer-bottom">
           <span>© {new Date().getFullYear()} {s.company_name}. All rights reserved.</span>
-          <span><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Cookies</a></span>
+          <span><Link to="/help#payments">Payments</Link> · <Link to="/help#sending">Terms of carriage</Link> · <Link to="/contact">Contact</Link></span>
         </div>
       </div>
     </footer>
@@ -81,7 +76,7 @@ export function InstallUI() {
     <>
       <div className="tp-install-banner" id="installBanner" role="dialog" aria-label="Install app">
         <img src={APP_ICON} alt="" width="48" height="48" />
-        <div className="flex-grow-1 lh-sm"><b>TrackPro app</b><br /><small>Track parcels live from your home screen</small></div>
+        <div className="flex-grow-1 lh-sm"><b>VDC Express app</b><br /><small>Track parcels live from your home screen</small></div>
         <button type="button" className="btn btn-tp btn-pill btn-sm px-3 py-2" data-install>Install</button>
         <button type="button" className="tp-ib-close" data-banner-close aria-label="Dismiss"><i className="bi bi-x-lg" /></button>
       </div>
@@ -92,7 +87,7 @@ export function InstallUI() {
           <button type="button" className="tp-sheet-x" data-install-close aria-label="Close"><i className="bi bi-x-lg" /></button>
           <div className="d-flex align-items-center gap-3 mb-3">
             <img src={APP_ICON} alt="" width="60" height="60" className="rounded-4" />
-            <div><h5 className="fw-bold mb-0" id="insTitle">Install TrackPro</h5><small className="text-muted">Works like a native app · free · under 1 MB</small></div>
+            <div><h5 className="fw-bold mb-0" id="insTitle">Install VDC Express</h5><small className="text-muted">Works like a native app · free · under 1 MB</small></div>
           </div>
           <div className="ins-ios">
             <div className="ins-ios-other alert alert-warning small py-2" hidden><i className="bi bi-info-circle" /> For the best result open this page in <b>Safari</b> first.</div>

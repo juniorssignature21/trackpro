@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useSettings } from '../lib/settings';
+import Logo from './Logo';
 
 const SEND_LINKS = [
-  { hash: 'domestic', icon: 'bi-box-seam', title: 'Domestic parcels', sub: 'Next-day across the country' },
-  { hash: 'international', icon: 'bi-globe2', title: 'International', sub: '220+ countries & territories' },
-  { hash: 'express', icon: 'bi-lightning-charge', title: 'Same day express', sub: 'Door to door in hours' },
-  { hash: 'freight', icon: 'bi-truck', title: 'Freight & pallets', sub: 'Heavy and bulky goods' },
+  { hash: 'sdx', icon: 'bi-rocket-takeoff', title: 'Same Day', sub: 'Collected and delivered today' },
+  { hash: 'x09', icon: 'bi-alarm', title: 'Express 9:00 & 12:00', sub: 'Time-definite next business day' },
+  { hash: 'xpd', icon: 'bi-globe2', title: 'Express', sub: 'Next day in the US, 200+ countries' },
+  { hash: 'ecx', icon: 'bi-truck', title: 'Economy Select', sub: 'Lower cost for heavier shipments' },
+  { hash: 'freight', icon: 'bi-boxes', title: 'Freight & pallets', sub: 'Over 150 kg or oversized' },
 ];
-
-const LOGO = '/branding/logo_931a74e398.png';
 
 export function Topbar() {
   const s = useSettings();
   return (
     <div className="tp-topbar d-none d-lg-block">
       <div className="container d-flex justify-content-between">
-        <span><i className="bi bi-lightning-charge-fill" /> Same-day delivery now live in 40+ cities</span>
+        <span><i className="bi bi-lightning-charge-fill" /> Book by 5:00 PM for pickup today · Express to 200+ countries</span>
         <span><a href={`tel:${s.company_phone}`}><i className="bi bi-telephone" /> {s.company_phone}</a>
           &nbsp;·&nbsp;<a href={`mailto:${s.company_email}`}><i className="bi bi-envelope" /> {s.company_email}</a></span>
       </div>
@@ -47,7 +47,7 @@ export default function Navbar() {
     <nav className={`navbar navbar-expand-lg tp-nav sticky-top${scrolled ? ' scrolled' : ''}`}>
       <div className="container">
         <Link className="navbar-brand tp-logo" to="/">
-          <img src={LOGO} alt="TrackPro Logistics" className="tp-logo-img" style={{ height: 55, width: 'auto' }} />
+          <Logo height={46} className="tp-logo-img" />
         </Link>
         <div className="tp-mobile-tools">
           <button type="button" className="btn tp-app-pill" data-install aria-label="Download app">
@@ -61,7 +61,7 @@ export default function Navbar() {
         </div>
         <div className="offcanvas offcanvas-end" tabIndex={-1} id="tpMenu">
           <div className="offcanvas-header">
-            <span className="tp-logo"><img src={LOGO} alt="TrackPro Logistics" className="tp-logo-img" style={{ height: 34, width: 'auto' }} /></span>
+            <span className="tp-logo"><Logo height={34} className="tp-logo-img" /></span>
             <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" />
           </div>
           <div className="offcanvas-body">
@@ -91,7 +91,7 @@ export default function Navbar() {
                 <i className="bi bi-phone" /><span className="d-lg-none d-xl-inline ms-2">Install app</span>
               </button>
               <Link to="/quote" className="btn tp-btn-outline-dark">
-                <i className="bi bi-box-seam me-2" />Get a quote <i className="bi bi-arrow-right ms-2" />
+                <i className="bi bi-box-seam me-2" />Ship now <i className="bi bi-arrow-right ms-2" />
               </Link>
             </div>
           </div>

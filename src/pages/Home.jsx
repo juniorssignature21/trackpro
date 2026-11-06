@@ -5,7 +5,10 @@ import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
 import Count from '../components/Count';
 import { Faq, PixelQ, PxArrow, TrackForm } from '../components/Bits';
 import { HOME_FAQ, TESTIMONIALS } from '../content';
-import { useTitle } from '../lib/hooks';
+import CountrySelect from '../components/CountrySelect';
+import { useSeo } from '../lib/hooks';
+import { money } from '../lib/format';
+import { useSettings } from '../lib/settings';
 
 const LINK_CARDS = [
   { to: '/quote', bg: '#dcf8e6', c: 'var(--tp-green)', icon: 'bi-send-fill', title: 'Send', text: 'Send parcels the smarter way' },
@@ -14,20 +17,21 @@ const LINK_CARDS = [
 ];
 const STEPS = [
   { icon: 'bi-calculator', title: 'Get a quote', text: 'Enter size, weight and destination. Price appears instantly.' },
-  { icon: 'bi-credit-card-2-front', title: 'Pay securely', text: 'Card, transfer or cash – receipt stamped and saved for you.' },
-  { icon: 'bi-box2-heart', title: 'Drop off or collect', text: 'Hand it to a courier or drop at a TrackPro point near you.' },
+  { icon: 'bi-credit-card-2-front', title: 'Pay by card', text: 'Secure card checkout. Your receipt is stamped and saved for you.' },
+  { icon: 'bi-box2-heart', title: 'We pick it up', text: 'A courier collects from your door on the business day you choose.' },
   { icon: 'bi-geo-alt', title: 'Track live', text: 'Follow every move on the map until it lands at the door.' },
 ];
 const BLOG = [
   { bg: 'var(--tp-green)', icon: 'bi-heart-fill', title: 'Save your faves', text: 'Your delivery, your rules. Set a go-to drop point, a safe place and a trusted neighbour.', more: 'Power back to you' },
   { bg: 'var(--tp-yellow-soft)', icon: 'bi-house-heart-fill', title: 'There’s no place like out-of-home', text: 'Make deliveries work around your life with 24/7 pickup points.', more: 'We’re not in Kansas anymore' },
-  { bg: 'var(--tp-pink)', icon: 'bi-stars', title: '9 TrackPro tricks worth knowing', text: 'Think you know TrackPro? Discover the shortcuts power users swear by.', more: 'Did you know?' },
+  { bg: 'var(--tp-pink)', icon: 'bi-stars', title: 'Chargeable weight, explained', text: 'Why a big light box can cost more than a small heavy one, and how to pack to save.', more: 'Did you know?' },
 ];
-const MARQUEE = ['Live GPS tracking', 'Instant receipts', '220+ countries', 'Same day delivery', 'Pay in-app', 'Customs handled'];
+const MARQUEE = ['Live GPS tracking', 'Express 9:00', '200+ countries', 'Same day delivery', 'Secure card payment', 'Customs handled'];
 
 function SendTab() {
   const navigate = useNavigate();
-  const [f, setF] = useState({ origin: '', destination: '', weight: '' });
+  const { domestic_country: home } = useSettings();
+  const [f, setF] = useState({ origin_country: home, dest_country: home, weight: '' });
   const set = k => e => setF({ ...f, [k]: e.target.value });
   const submit = e => {
     e.preventDefault();
@@ -36,17 +40,19 @@ function SendTab() {
   return (
     <form onSubmit={submit}>
       <div className="row g-2 mb-3">
-        <div className="col-6"><input value={f.origin} onChange={set('origin')} className="form-control tp-input" placeholder="From" aria-label="From" /></div>
-        <div className="col-6"><input value={f.destination} onChange={set('destination')} className="form-control tp-input" placeholder="To" aria-label="To" /></div>
+        <div className="col-6"><CountrySelect value={f.origin_country} onChange={set('origin_country')} aria-label="Ship from country" /></div>
+        <div className="col-6"><CountrySelect value={f.dest_country} onChange={set('dest_country')} aria-label="Ship to country" /></div>
         <div className="col-12"><input value={f.weight} onChange={set('weight')} type="number" step="0.1" min="0" className="form-control tp-input" placeholder="Weight (kg)" aria-label="Weight in kg" /></div>
       </div>
-      <button className="btn btn-tp w-100">Get a quote</button>
+      <button className="btn btn-tp w-100">Compare prices</button>
     </form>
   );
 }
 
 export default function Home() {
-  useTitle();
+  useSeo();
+  const { products, currency_symbol: cur, international_from: intlFrom } = useSettings();
+  const cheapest = Math.min(...products.map(p => p.from));
   return (
     <>
       {/* HERO */}
@@ -62,20 +68,20 @@ export default function Home() {
                   <p className="hero-copy">Watch your parcel move street by street. Real-time GPS, instant updates and receipts in your pocket.</p>
                 </SwiperSlide>
                 <SwiperSlide>
-                  <h1 className="tp-mega"><span className="d-block">Send</span><span className="band pink">smarter</span><span className="d-block outline">pay less</span></h1>
-                  <p className="hero-copy">Instant quotes from £3.99. No hidden fees, no queues – just tap, pay and drop off.</p>
+                  <h2 className="tp-mega"><span className="d-block">Send</span><span className="band pink">smarter</span><span className="d-block outline">pay less</span></h2>
+                  <p className="hero-copy">US express from {money(cheapest, cur)}, international from {money(intlFrom, cur)}. Every charge shown up front, pay by card, we pick up.</p>
                 </SwiperSlide>
                 <SwiperSlide>
-                  <h1 className="tp-mega"><span className="d-block">Global</span><span className="band blue">door to</span><span className="d-block">door</span></h1>
-                  <p className="hero-copy">220+ countries, customs handled for you, and a courier you can actually call.</p>
+                  <h2 className="tp-mega"><span className="d-block">Global</span><span className="band blue">door to</span><span className="d-block">door</span></h2>
+                  <p className="hero-copy">200+ countries, customs handled for you, duties paid or unpaid, and a courier you can actually call.</p>
                 </SwiperSlide>
                 <div slot="container-end" className="swiper-pagination hero-pagination" />
               </Swiper>
 
               <div className="m-wallet">
                 <div className="d-flex justify-content-between align-items-center">
-                  <div><small className="text-white-50">Delivered by TrackPro</small>
-                    <div className="fs-2 fw-bold"><Count to={1280001} /></div></div>
+                  <div><small className="text-white-50">Ship with VDC Express</small>
+                    <div className="fs-2 fw-bold">200+ countries</div></div>
                   <span className="chip-lime"><i className="bi bi-broadcast" /> Live</span>
                 </div>
                 <div className="quick-actions">
@@ -96,7 +102,7 @@ export default function Home() {
                 </ul>
                 <div className="tab-content">
                   <div className="tab-pane fade" id="tabSend">
-                    <h3>Send in seconds</h3><p>Get an instant price for your parcel</p>
+                    <h3>Ship in minutes</h3><p>Compare every service and delivery date</p>
                     <SendTab />
                   </div>
                   <div className="tab-pane fade show active" id="tabTrack">
@@ -146,13 +152,13 @@ export default function Home() {
         <div className="container">
           <div className="row align-items-center g-4 g-lg-5">
             <div className="col-lg-6 order-lg-2" data-aos="fade-up">
-              <span className="eyebrow"><i className="bi bi-phone" /> The TrackPro app</span>
+              <span className="eyebrow"><i className="bi bi-phone" /> The VDC Express app</span>
               <h2 className="display-x mt-3">Your parcels.<br />Like your bank app.</h2>
               <p className="lead-x mt-3">Everything you&apos;d expect from a modern fintech app – but for deliveries. Live balances become live locations.</p>
               <ul className="list-unstyled feat-list mt-4">
                 <li><span className="ic"><i className="bi bi-broadcast-pin" /></span><div><h5 className="mb-1">Live map movement</h5><p className="text-muted mb-0">See your courier glide across the map with refreshed GPS points.</p></div></li>
                 <li><span className="ic"><i className="bi bi-receipt-cutoff" /></span><div><h5 className="mb-1">Stamped digital receipts</h5><p className="text-muted mb-0">Every payment produces a verified, printable receipt with QR code.</p></div></li>
-                <li><span className="ic"><i className="bi bi-shield-check" /></span><div><h5 className="mb-1">Insured up to £10,000</h5><p className="text-muted mb-0">Add parcel protection at checkout in one tap.</p></div></li>
+                <li><span className="ic"><i className="bi bi-shield-check" /></span><div><h5 className="mb-1">Protected up to $25,000</h5><p className="text-muted mb-0">Add shipment value protection when you book, from 1% of the value.</p></div></li>
               </ul>
               <div className="d-flex flex-wrap gap-2">
                 <Link to="/track" className="btn btn-tp-dark btn-pill px-4">Track a parcel <i className="bi bi-arrow-right ms-2" /></Link>
@@ -168,7 +174,7 @@ export default function Home() {
                     <div className="ring-wrap">
                       <svg width="220" height="220"><circle cx="110" cy="110" r="92" stroke="rgba(255,255,255,.25)" strokeWidth="18" fill="none" />
                         <circle cx="110" cy="110" r="92" stroke="#fff" strokeWidth="18" fill="none" strokeLinecap="round" strokeDasharray="578" strokeDashoffset="190" /></svg>
-                      <div className="ring-center"><div className="fw-bold fs-5">In Transit</div><small className="mono opacity-75">#TP26AB100245</small><span className="chip-lime mt-2">Live Tracking</span></div>
+                      <div className="ring-center"><div className="fw-bold fs-5">In Transit</div><small className="mono opacity-75">#4829137563</small><span className="chip-lime mt-2">Live Tracking</span></div>
                     </div>
                     <div className="mini-card"><div className="fw-bold">Delivery Details</div><div className="mini-bar"><span style={{ width: '62%' }} /></div>
                       <div className="d-flex justify-content-between small opacity-75"><span>Mon</span><span>Wed</span></div></div>
@@ -177,13 +183,13 @@ export default function Home() {
                 </div>
                 <div className="col-5 d-none d-sm-block">
                   <div className="float-2" style={{ marginLeft: -30 }}>
-                    <Link to="/track/TP26AB100245" className="route-card d-block text-decoration-none"><div className="mono fw-bold">#TP26AB100245</div>
+                    <div className="route-card d-block" aria-hidden="true"><div className="mono fw-bold">#4829137563</div>
                       <div className="route-line"><span className="dot" /><span className="dash" /><span className="box"><i className="bi bi-box-seam" /></span><span className="dash" /><span className="dot" /></div>
-                      <small>In Transit</small></Link>
-                    <Link to="/track/TP26ZR781003" className="route-card dark d-block text-decoration-none" style={{ transform: 'rotate(-4deg)' }}><div className="mono fw-bold">#TP26ZR781003</div>
-                      <div className="route-line"><span className="dot" /><span className="dash" /><span className="dot" /></div><small>Delivered</small></Link>
-                    <Link to="/track/TP26KX554120" className="route-card light d-block text-decoration-none"><div className="mono fw-bold">#TP26KX554120</div>
-                      <div className="route-line"><span className="dot" /><span className="dash" /><span className="box" style={{ background: 'var(--tp-ink)', color: '#fff' }}><i className="bi bi-airplane" /></span><span className="dash" /><span className="dot" /></div><small>At hub · Paris</small></Link>
+                      <small>In transit · Memphis</small></div>
+                    <div className="route-card dark d-block" aria-hidden="true" style={{ transform: 'rotate(-4deg)' }}><div className="mono fw-bold">#3065581201</div>
+                      <div className="route-line"><span className="dot" /><span className="dash" /><span className="dot" /></div><small>Delivered</small></div>
+                    <div className="route-card light d-block" aria-hidden="true"><div className="mono fw-bold">#5710042181</div>
+                      <div className="route-line"><span className="dot" /><span className="dash" /><span className="box" style={{ background: 'var(--tp-ink)', color: '#fff' }}><i className="bi bi-airplane" /></span><span className="dash" /><span className="dot" /></div><small>Customs · Lagos</small></div>
                   </div>
                 </div>
               </div>
@@ -224,15 +230,15 @@ export default function Home() {
         <div className="container">
           <div className="tp-dark-banner" data-aos="fade-up">
             <div className="row"><div className="col-lg-7">
-              <h2>New to TrackPro?</h2>
+              <h2>New to VDC Express?</h2>
               <p className="fs-5 mb-4">Get the lowdown on how our couriers, hubs and live map work.</p>
               <div className="d-flex flex-wrap gap-3">
-                <Link to="/about" className="btn btn-tp">Learn about TrackPro</Link>
+                <Link to="/about" className="btn btn-tp">Learn about VDC Express</Link>
                 <Link to="/help#tracking" className="btn btn-tp-ghost">What&apos;s live tracking?</Link>
               </div>
             </div></div>
             <div className="locker">
-              <span className="brand"><i className="bi bi-geo-alt-fill" /> TrackPro</span>
+              <span className="brand"><i className="bi bi-geo-alt-fill" /> VDC Express</span>
               <span className="big">SCAN<br />TAP<br />&amp;GO</span>
               {Array.from({ length: 30 }, (_, i) => <div key={i} className={i === 4 ? 'scr' : undefined} />)}
             </div>
@@ -249,7 +255,7 @@ export default function Home() {
       <section className="section pt-0">
         <div className="container">
           <div className="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
-            <h2 className="display-x mb-0">Loved by<br />senders</h2><p className="lead-x mb-0">4.9 average from 38,000+ reviews</p>
+            <h2 className="display-x mb-0">Loved by<br />senders</h2><p className="lead-x mb-0">What customers say about shipping with us</p>
           </div>
           <Swiper className="quote-swiper" modules={[Autoplay]} loop spaceBetween={20} autoplay={{ delay: 4000 }}
             slidesPerView={1.1} breakpoints={{ 768: { slidesPerView: 2 }, 1200: { slidesPerView: 3 } }}>

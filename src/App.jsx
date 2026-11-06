@@ -1,22 +1,34 @@
+import { lazy, Suspense } from 'react';
 import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import { About, Business, Help, Services } from './pages/InfoPages';
 import Quote from './pages/Quote';
 import Contact from './pages/Contact';
-import { TrackResult, TrackSearch } from './pages/Track';
-import Receipt from './pages/Receipt';
 import { AuthProvider, RequireAuth } from './admin/auth';
-import AdminLayout from './admin/AdminLayout';
-import Login from './admin/Login';
-import Dashboard from './admin/Dashboard';
-import Shipments from './admin/Shipments';
-import ShipmentEdit from './admin/ShipmentEdit';
-import { Account, Messages, Quotes } from './admin/Inbox';
-import { useTitle } from './lib/hooks';
+import { useSeo } from './lib/hooks';
+
+// Heavier, less-visited screens load on demand (map, QR codes, admin) so the public pages stay fast.
+const named = (loader, name) => lazy(() => loader().then(m => ({ default: m[name] })));
+const TrackSearch = named(() => import('./pages/Track'), 'TrackSearch');
+const TrackResult = named(() => import('./pages/Track'), 'TrackResult');
+const Receipt = lazy(() => import('./pages/Receipt'));
+const Book = named(() => import('./pages/Book'), 'Book');
+const BookConfirm = named(() => import('./pages/Book'), 'BookConfirm');
+const AdminLayout = lazy(() => import('./admin/AdminLayout'));
+const Login = lazy(() => import('./admin/Login'));
+const Dashboard = lazy(() => import('./admin/Dashboard'));
+const Shipments = lazy(() => import('./admin/Shipments'));
+const ShipmentEdit = lazy(() => import('./admin/ShipmentEdit'));
+const Quotes = named(() => import('./admin/Inbox'), 'Quotes');
+const Bookings = named(() => import('./admin/Inbox'), 'Bookings');
+const Messages = named(() => import('./admin/Inbox'), 'Messages');
+const Account = named(() => import('./admin/Inbox'), 'Account');
+
+const Loading = () => <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}><span className="spinner-border" role="status" aria-label="Loading" /></div>;
 
 function NotFound() {
-  useTitle('Page not found');
+  useSeo('Page not found', { noindex: true });
   return (
     <section className="tp-page-hero" style={{ minHeight: '60vh' }}>
       <div className="container">
@@ -43,6 +55,7 @@ function Legacy({ to }) {
 export default function App() {
   return (
     <AuthProvider>
+      <Suspense fallback={<Loading />}>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
@@ -54,6 +67,8 @@ export default function App() {
           <Route path="quote" element={<Quote />} />
           <Route path="track" element={<TrackSearch />} />
           <Route path="receipt" element={<Receipt />} />
+          <Route path="book" element={<Book />} />
+          <Route path="book/confirm" element={<BookConfirm />} />
           {Object.entries(LEGACY).map(([from, to]) => <Route key={from} path={from} element={<Legacy to={to} />} />)}
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -67,10 +82,12 @@ export default function App() {
           <Route path="shipments" element={<Shipments />} />
           <Route path="shipments/:id" element={<ShipmentEdit />} />
           <Route path="quotes" element={<Quotes />} />
+          <Route path="bookings" element={<Bookings />} />
           <Route path="messages" element={<Messages />} />
           <Route path="account" element={<Account />} />
         </Route>
       </Routes>
+      </Suspense>
     </AuthProvider>
   );
 }

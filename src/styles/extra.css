@@ -59,3 +59,16 @@ body.adm .tp-tabbar{display:none!important}
   .adm-content{padding:18px 14px 60px}
   body.adm{padding-bottom:0!important}
 }
+
+/* ---------- quote: service comparison rows ---------- */
+.svc-line{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid #e6e6ea;border-radius:16px;background:#fff;cursor:pointer;transition:border-color .15s,background .15s;margin:0}
+.svc-line:hover{border-color:var(--tp-ink)}
+.svc-line.active{border-color:var(--tp-ink);background:var(--tp-yellow-pale);box-shadow:0 0 0 3px rgba(255,204,0,.35)}
+.svc-line.disabled{opacity:.5;cursor:not-allowed;background:#f6f6f8}
+.svc-line input{position:absolute;opacity:0;pointer-events:none}
+.svc-line-ic{font-size:1.5rem;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--tp-ink);color:var(--tp-yellow);flex-shrink:0}
+.svc-line:focus-within{outline:3px solid #1B6CFF;outline-offset:2px}
+.tp-logo-img{display:block}
+.tp-footer a{overflow-wrap:anywhere}
+@media(max-width:991.98px){.tp-nav .navbar-brand .tp-logo-img{height:38px;width:auto}}
+@media(max-width:575.98px){.tp-nav .navbar-brand .tp-logo-img{height:30px;width:auto}}

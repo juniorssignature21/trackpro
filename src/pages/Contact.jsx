@@ -6,7 +6,7 @@ import { useTitle } from '../lib/hooks';
 import { useSettings } from '../lib/settings';
 
 export default function Contact() {
-  useTitle('Contact');
+  useTitle();
   const s = useSettings();
   const [params] = useSearchParams();
   const empty = { name: '', email: '', subject: params.get('subject') || '', message: '' };

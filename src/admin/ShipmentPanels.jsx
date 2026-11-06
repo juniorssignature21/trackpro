@@ -1,8 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, mediaUrl } from '../lib/api';
 import { Alert } from '../components/Bits';
 import { fmtDateTime, fromLocalInput, money, toLocalInput } from '../lib/format';
-import { calcQuote } from '../lib/pricing';
 import { useSettings } from '../lib/settings';
 import { toast } from '../lib/pwa';
 import MapPicker, { geocode } from './MapPicker';
@@ -128,14 +127,13 @@ export function EventsPanel({ shipment: sh, onChange }) {
 }
 
 /* ------------------------------------------------------------------ payments & receipts */
-const METHODS = ['Card', 'Bank transfer', 'Cash', 'Mobile wallet', 'Pending'];
+const METHODS = ['Card', 'Bank transfer', 'Cash', 'Account (invoice)', 'Pending'];
 
 function blankPayment(sh, vatRate) {
-  const q = calcQuote({ weight: sh.weight_kg, length: sh.length_cm, width: sh.width_cm, height: sh.height_cm, service: sh.service_type, international: sh.international, vatRate });
   return {
-    method: 'Card', reference: '', stamp: 'PAID', vat_rate: Math.round(vatRate * 100), amount_paid: '', payer_name: sh.sender_name, note: '',
+    method: 'Card', reference: '', stamp: 'PAID', vat_rate: Math.round(vatRate * 1000) / 10, amount_paid: '', payer_name: sh.sender_name, note: '',
     paid_at: toLocalInput(new Date()),
-    items: [{ label: `${sh.service_type}${sh.international ? ' international' : ''} shipping (${q.charge.toFixed(1)} kg)`, amount: q.net.toFixed(2) }],
+    items: [{ label: `${sh.service_type} transport`, amount: '' }],
   };
 }
 
@@ -147,6 +145,17 @@ export function PaymentsPanel({ shipment: sh, onChange }) {
   const [error, setError] = useState('');
   const set = k => e => setF(p => ({ ...p, [k]: e.target.value }));
   const setItem = (i, k) => e => setF(p => ({ ...p, items: p.items.map((it, j) => (j === i ? { ...it, [k]: e.target.value } : it)) }));
+
+  const [pricing, setPricing] = useState(false);
+  // fill the charge lines from the live rate card (same engine as online booking)
+  const applyRatePrice = async () => {
+    setPricing(true); setError('');
+    try {
+      const o = await api.shipmentQuote(sh.id);
+      setF(p => ({ ...p, vat_rate: Math.round((o.net ? o.tax / o.net : 0) * 1000) / 10, items: o.lines.map(l => ({ label: l.label, amount: l.amount.toFixed(2) })) }));
+    } catch (err) { setError(`Couldn't price this shipment: ${err.message}`); } finally { setPricing(false); }
+  };
+  useEffect(() => { if (!sh.payments?.length) applyRatePrice(); }, [sh.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const net = f.items.reduce((s, it) => s + (+it.amount || 0), 0);
   const total = net * (1 + (+f.vat_rate || 0) / 100);
@@ -187,7 +196,10 @@ export function PaymentsPanel({ shipment: sh, onChange }) {
               <select className="form-select" value={f.method} onChange={set('method')}>{[...new Set([...METHODS, f.method])].map(m => <option key={m}>{m}</option>)}</select></div>
             <div className="col-md-4"><label className="form-label">Reference</label><input className="form-control" value={f.reference} onChange={set('reference')} placeholder="e.g. VISA •••• 4242" /></div>
             <div className="col-12">
-              <label className="form-label">Line items (before VAT)</label>
+              <div className="d-flex justify-content-between align-items-center">
+                <label className="form-label">Line items (before tax)</label>
+                <button type="button" className="btn btn-sm btn-link" onClick={applyRatePrice} disabled={pricing}>{pricing ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-calculator me-1" />Use rate card price</>}</button>
+              </div>
               {f.items.map((it, i) => (
                 <div className="d-flex gap-2 mb-2" key={i}>
                   <input className="form-control" value={it.label} onChange={setItem(i, 'label')} placeholder="Description" />
@@ -197,7 +209,7 @@ export function PaymentsPanel({ shipment: sh, onChange }) {
               ))}
               <button type="button" className="btn btn-sm btn-light" onClick={() => setF(p => ({ ...p, items: [...p.items, { label: '', amount: '' }] }))}><i className="bi bi-plus-lg" /> Add line</button>
             </div>
-            <div className="col-md-4"><label className="form-label">VAT %</label><input type="number" min="0" max="100" step="0.1" className="form-control" value={f.vat_rate} onChange={set('vat_rate')} /></div>
+            <div className="col-md-4"><label className="form-label">Tax %</label><input type="number" min="0" max="100" step="0.1" className="form-control" value={f.vat_rate} onChange={set('vat_rate')} /></div>
             <div className="col-md-4"><label className="form-label">Amount paid</label><input type="number" min="0" step="0.01" className="form-control" value={f.amount_paid} onChange={set('amount_paid')} placeholder={`Full: ${total.toFixed(2)}`} /></div>
             <div className="col-md-4"><label className="form-label">Date</label><input type="datetime-local" className="form-control" value={f.paid_at} onChange={set('paid_at')} /></div>
             <div className="col-md-6"><label className="form-label">Paid by</label><input className="form-control" value={f.payer_name} onChange={set('payer_name')} /></div>

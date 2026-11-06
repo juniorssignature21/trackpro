@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Alert, Spinner } from '../components/Bits';
 import { fmtDateTime, money } from '../lib/format';
@@ -46,14 +46,14 @@ export function Quotes() {
             <div>
               <div className="d-flex align-items-center gap-2 flex-wrap"><b className="mono">{q.reference}</b><span className={`tp-badge ${Q_STATUS[q.status]}`}>{q.status}</span><small className="text-muted">{fmtDateTime(q.created_at)}</small></div>
               <div className="fs-5 fw-bold mt-1">{q.origin} <i className="bi bi-arrow-right" /> {q.destination}</div>
-              <div className="small text-muted">{q.service_type}{q.international ? ' · International' : ''} · {q.weight_kg} kg ({q.length_cm}×{q.width_cm}×{q.height_cm} cm) · chargeable {q.chargeable_kg} kg</div>
+              <div className="small text-muted">{q.service_type}{q.international ? ` · International ${q.origin_country} → ${q.dest_country}` : ''}{q.is_document ? ' · Documents' : ''} · {q.pieces} × {q.weight_kg} kg ({q.length_cm}×{q.width_cm}×{q.height_cm} cm) · chargeable {q.chargeable_kg} kg</div>
             </div>
-            <div className="text-end"><div className="display-x" style={{ fontSize: '1.8rem' }}>{money(q.total, cur)}</div><small className="text-muted">incl. {money(q.vat, cur)} VAT</small></div>
+            <div className="text-end"><div className="display-x" style={{ fontSize: '1.8rem' }}>{money(q.total, cur)}</div>{q.vat > 0 && <small className="text-muted">incl. {money(q.vat, cur)} tax</small>}</div>
           </div>
           <hr />
           <div className="d-flex justify-content-between flex-wrap gap-2 align-items-center">
             <div className="small">
-              <b>{q.name}</b> · <a href={`mailto:${q.email}?subject=${encodeURIComponent(`Your TrackPro quote ${q.reference}`)}`}>{q.email}</a>{q.phone && <> · <a href={`tel:${q.phone}`}>{q.phone}</a></>}
+              <b>{q.name}</b> · <a href={`mailto:${q.email}?subject=${encodeURIComponent(`Your VDC Express quote ${q.reference}`)}`}>{q.email}</a>{q.phone && <> · <a href={`tel:${q.phone}`}>{q.phone}</a></>}
               {q.message && <div className="text-muted mt-1">“{q.message}”</div>}
             </div>
             <div className="d-flex gap-2">
@@ -66,6 +66,55 @@ export function Quotes() {
           </div>
         </div>
       ))}
+    </>
+  );
+}
+
+const B_STATUS = { awaiting_payment: 'st-warn', paid: 'st-success', failed: 'st-danger' };
+
+export function Bookings() {
+  useTitle('Online bookings');
+  const { currency_symbol: cur } = useSettings();
+  const [filter, setFilter] = useState('');
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => { setRows(null); api.bookings(filter).then(setRows).catch(e => setError(e.message)); }, [filter]);
+
+  return (
+    <>
+      <div className="adm-head">
+        <h1>Online bookings</h1>
+        <select className="form-select" style={{ width: 'auto' }} value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter">
+          <option value="">All</option><option value="paid">Paid</option><option value="awaiting_payment">Awaiting payment</option><option value="failed">Failed</option>
+        </select>
+      </div>
+      <p className="text-muted small">Customers book and pay by card on the website. A shipment is created automatically once Paystack confirms the payment.</p>
+      <Alert onClose={() => setError('')}>{error}</Alert>
+      {!rows ? <Spinner /> : !rows.length ? <div className="adm-card text-muted">No online bookings yet.</div> : rows.map(b => {
+        const d = b.details || {};
+        return (
+          <div className="adm-card" key={b.id}>
+            <div className="d-flex justify-content-between flex-wrap gap-2">
+              <div>
+                <div className="d-flex align-items-center gap-2 flex-wrap"><b className="mono">{b.reference}</b>
+                  <span className={`tp-badge ${B_STATUS[b.status]}`}>{b.status.replace('_', ' ')}</span><small className="text-muted">{fmtDateTime(b.created_at)}</small></div>
+                <div className="fs-5 fw-bold mt-1">{d.shipper?.city}, {d.origin_country} <i className="bi bi-arrow-right" /> {d.receiver?.city}, {d.dest_country}</div>
+                <div className="small text-muted">{b.product} · {d.pieces} × {d.weight_kg} kg · chargeable {b.quote?.chargeable_kg} kg · {d.contents}</div>
+              </div>
+              <div className="text-end"><div className="display-x" style={{ fontSize: '1.8rem' }}>{money(b.amount, cur)}</div>
+                <small className="text-muted">{b.card || (b.attempts > 1 ? `${b.attempts} payment attempts` : 'card')}</small></div>
+            </div>
+            <hr />
+            <div className="d-flex justify-content-between flex-wrap gap-2 align-items-center small">
+              <div><b>{d.shipper?.name}</b> · <a href={`mailto:${b.email}`}>{b.email}</a> · {d.shipper?.phone}
+                {b.gateway_message && b.status !== 'paid' && <div className="text-danger mt-1">{b.gateway_message}</div>}</div>
+              {b.tracking_number
+                ? <Link className="btn btn-sm btn-tp-dark" to={`/admin/shipments?q=${b.tracking_number}`}><i className="bi bi-box-seam me-1" />{b.tracking_number}</Link>
+                : <span className="text-muted">No shipment until paid</span>}
+            </div>
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -105,7 +154,7 @@ export function Messages() {
                 <div className="px-3 pb-3">
                   <p style={{ whiteSpace: 'pre-wrap' }}>{m.message}</p>
                   <div className="d-flex gap-2 flex-wrap">
-                    <a className="btn btn-sm btn-tp-dark" href={`mailto:${m.email}?subject=${encodeURIComponent('Re: ' + (m.subject || 'Your message to TrackPro'))}`}><i className="bi bi-reply me-1" />Reply to {m.email}</a>
+                    <a className="btn btn-sm btn-tp-dark" href={`mailto:${m.email}?subject=${encodeURIComponent('Re: ' + (m.subject || 'Your message to VDC Express'))}`}><i className="bi bi-reply me-1" />Reply to {m.email}</a>
                     <button type="button" className="btn btn-sm btn-light" onClick={() => mark(m, false)}>Mark unread</button>
                     <button type="button" className="btn btn-sm btn-light text-danger ms-auto" onClick={() => remove(m)}><i className="bi bi-trash" /> Delete</button>
                   </div>

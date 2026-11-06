@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from './auth';
 import { useBodyClass } from '../lib/hooks';
 import { api } from '../lib/api';
+import Logo from '../components/Logo';
 
 export default function AdminLayout() {
   useBodyClass('adm');
@@ -23,13 +24,14 @@ export default function AdminLayout() {
     <div className="adm">
       <div className="adm-top">
         <button type="button" className="btn btn-sm text-white" onClick={() => setOpen(true)} aria-label="Open menu"><i className="bi bi-list fs-4" /></button>
-        <img src="/branding/logolight_7df7d148ec.png" alt="TrackPro" />
+        <Logo light height={30} />
         <Link to="/admin/shipments/new" className="btn btn-sm btn-tp px-2 py-1" aria-label="New shipment"><i className="bi bi-plus-lg" /></Link>
       </div>
       <aside className={`adm-side${open ? ' open' : ''}`} onClick={e => e.target === e.currentTarget && setOpen(false)}>
-        <div className="brand"><img src="/branding/logolight_7df7d148ec.png" alt="TrackPro" /></div>
+        <div className="brand"><Logo light height={34} /></div>
         <NavLink end to="/admin"><i className="bi bi-grid-1x2-fill" />Dashboard</NavLink>
         <NavLink to="/admin/shipments"><i className="bi bi-box-seam-fill" />Shipments</NavLink>
+        <NavLink to="/admin/bookings"><i className="bi bi-credit-card-fill" />Online bookings</NavLink>
         <NavLink to="/admin/quotes"><i className="bi bi-calculator-fill" />Quote requests{counts.q > 0 && <span className="pill">{counts.q}</span>}</NavLink>
         <NavLink to="/admin/messages"><i className="bi bi-envelope-fill" />Messages{counts.m > 0 && <span className="pill">{counts.m}</span>}</NavLink>
         <NavLink to="/admin/account"><i className="bi bi-person-fill-gear" />Account</NavLink>

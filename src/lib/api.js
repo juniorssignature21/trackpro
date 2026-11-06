@@ -18,7 +18,7 @@ export class ApiError extends Error {
 function messageFrom(detail, fallback) {
   if (typeof detail === 'string') return detail;
   if (Array.isArray(detail) && detail.length) {
-    // FastAPI validation errors
+    // field errors
     return detail.map(d => {
       const field = Array.isArray(d.loc) ? d.loc.filter(p => p !== 'body').join(' › ') : '';
       return field ? `${field}: ${d.msg}` : d.msg;
@@ -64,6 +64,9 @@ export const api = {
   receipts: (id, r) => request('/api/receipts', { params: { id, r } }),
   calcQuote: body => request('/api/quote/calculate', { method: 'POST', body }),
   requestQuote: body => request('/api/quotes', { method: 'POST', body }),
+  createBooking: body => request('/api/bookings', { method: 'POST', body }),
+  verifyBooking: reference => request('/api/bookings/verify', { params: { reference } }),
+  retryBooking: reference => request(`/api/bookings/${encodeURIComponent(reference)}/pay`, { method: 'POST' }),
   contact: body => request('/api/contact', { method: 'POST', body }),
 
   // admin
@@ -76,6 +79,8 @@ export const api = {
   createShipment: body => request('/api/admin/shipments', { method: 'POST', body, auth: true }),
   updateShipment: (id, body) => request(`/api/admin/shipments/${id}`, { method: 'PATCH', body, auth: true }),
   deleteShipment: id => request(`/api/admin/shipments/${id}`, { method: 'DELETE', auth: true }),
+  shipmentQuote: id => request(`/api/admin/shipments/${id}/quote`, { auth: true }),
+  bookings: status => request('/api/admin/bookings', { auth: true, params: { status } }),
   addEvent: (id, body) => request(`/api/admin/shipments/${id}/events`, { method: 'POST', body, auth: true }),
   updateEvent: (id, eid, body) => request(`/api/admin/shipments/${id}/events/${eid}`, { method: 'PUT', body, auth: true }),
   deleteEvent: (id, eid) => request(`/api/admin/shipments/${id}/events/${eid}`, { method: 'DELETE', auth: true }),

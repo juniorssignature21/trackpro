@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { fmtDate, fmtDateTime, money } from '../lib/format';
 import { useTitle } from '../lib/hooks';
 import { toast } from '../lib/pwa';
+import Logo from '../components/Logo';
 
 const STAMP_CLASS = { PAID: 'green', 'PART PAID': 'orange', 'CUSTOMS CLEARED': 'blue', REFUNDED: '', UNPAID: '' };
 
@@ -15,7 +16,7 @@ function Stamp({ word, date }) {
       <svg viewBox="0 0 190 190" aria-hidden="true">
         <defs><path id={pid} d="M95,95 m-72,0 a72,72 0 1,1 144,0 a72,72 0 1,1 -144,0" /></defs>
         <text fontSize="13" fontWeight="800" letterSpacing="3" fill="currentColor">
-          <textPath href={`#${pid}`}>TRACKPRO LOGISTICS ★ VERIFIED ★ TRACKPRO LOGISTICS ★</textPath>
+          <textPath href={`#${pid}`}>VDC EXPRESS LOGISTICS ★ VERIFIED ★ VDC EXPRESS ★</textPath>
         </text>
       </svg>
       <div>
@@ -38,7 +39,7 @@ function ReceiptDoc({ r }) {
     <div className="receipt mb-4">
       <div className="rhead">
         <div>
-          <img src="/branding/logo_931a74e398.png" alt={r.company_name} style={{ height: 48 }} />
+          <Logo height={48} />
           <div className="small text-muted mt-2" style={{ maxWidth: 300 }}>{r.company_address}<br />{r.company_email} · {r.company_phone}</div>
         </div>
         <div className="text-md-end">
@@ -64,7 +65,7 @@ function ReceiptDoc({ r }) {
         <div className="col-sm-6">
           <small className="text-muted text-uppercase fw-bold" style={{ letterSpacing: '.06em' }}>Shipment</small>
           <div className="mono fw-bold">{r.tracking_number}</div>
-          <div className="small">{r.origin} → {r.destination}<br />{r.service_type}{r.international ? ' · International' : ''} · {r.weight_kg} kg{r.pieces > 1 ? ` · ${r.pieces} pcs` : ''}{r.contents ? ` · ${r.contents}` : ''}</div>
+          <div className="small">{r.origin} → {r.destination}<br />{r.service_type}{r.international ? ` · International${r.incoterm ? ` · ${r.incoterm}` : ''}` : ''} · {r.weight_kg} kg{r.pieces > 1 ? ` · ${r.pieces} pcs` : ''}{r.contents ? ` · ${r.contents}` : ''}</div>
         </div>
         <div className="col-sm-6">
           <small className="text-muted text-uppercase fw-bold" style={{ letterSpacing: '.06em' }}>Payment</small>
@@ -88,7 +89,7 @@ function ReceiptDoc({ r }) {
           <table className="w-100 totals">
             <tbody>
               <tr><td>Subtotal</td><td className="text-end">{money(p.net, cur)}</td></tr>
-              <tr><td>VAT ({Math.round(p.vat_rate * 100)}%)</td><td className="text-end">{money(p.vat, cur)}</td></tr>
+              {p.vat > 0 && <tr><td>{r.tax_label || 'Tax'} ({Math.round(p.vat_rate * 1000) / 10}%)</td><td className="text-end">{money(p.vat, cur)}</td></tr>}
               <tr className="border-top border-dark border-2"><td className="pt-2 fw-bold">Total</td><td className="text-end grand pt-2">{money(p.total, cur)}</td></tr>
               <tr><td>Paid</td><td className="text-end fw-bold">{money(p.paid, cur)}</td></tr>
               {p.balance > 0 && <tr><td className="text-danger fw-bold">Balance due</td><td className="text-end text-danger fw-bold">{money(p.balance, cur)}</td></tr>}
@@ -98,7 +99,7 @@ function ReceiptDoc({ r }) {
         <div className="col-md-6 order-md-1 d-flex align-items-end gap-3">
           {qr && <img src={qr} alt="QR code linking to this receipt" width="110" height="110" />}
           <div>
-            <div className="sign">TrackPro</div>
+            <div className="sign">VDC Express</div>
             <small className="text-muted d-block">Authorised signature</small>
             <small className="text-muted d-block mt-1">Scan to verify this receipt online.</small>
           </div>
@@ -114,7 +115,7 @@ export default function Receipt() {
   const id = params.get('id') || '', r = params.get('r') || '';
   const [form, setForm] = useState({ id, r });
   const [state, setState] = useState({ loading: false, error: '', results: null });
-  useTitle(state.results?.length ? `Receipt ${state.results[0].payment.receipt_number}` : 'Find your receipt');
+  useTitle(state.results?.length ? `Receipt ${state.results[0].payment.receipt_number}` : undefined, { noindex: !!state.results?.length });
 
   useEffect(() => {
     setForm({ id, r });
@@ -143,7 +144,7 @@ export default function Receipt() {
         <div className="container"><h1>Find your <span>receipt</span></h1>
           <p className="fs-5 mt-3">Enter a tracking number or receipt number.</p>
           <form className="row g-2 mt-3" style={{ maxWidth: 720 }} onSubmit={submit}>
-            <div className="col-md-5"><input value={form.id} onChange={e => setForm({ ...form, id: e.target.value })} className="form-control tp-input mono" placeholder="Tracking no. e.g. TP26AB100245" aria-label="Tracking number" /></div>
+            <div className="col-md-5"><input value={form.id} onChange={e => setForm({ ...form, id: e.target.value })} className="form-control tp-input mono" placeholder="Waybill no. e.g. 4829137563" aria-label="Tracking number" /></div>
             <div className="col-md-4"><input value={form.r} onChange={e => setForm({ ...form, r: e.target.value })} className="form-control tp-input mono" placeholder="or Receipt no." aria-label="Receipt number" /></div>
             <div className="col-md-3"><button className="btn btn-tp w-100 h-100" disabled={!form.id.trim() && !form.r.trim()}>Find</button></div>
           </form>

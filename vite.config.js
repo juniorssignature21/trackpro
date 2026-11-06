@@ -15,3 +15,5 @@ export default defineConfig({
   },
   build: { chunkSizeWarningLimit: 900 },
 });
+
+// https://www.hiveart.xyz/perez/

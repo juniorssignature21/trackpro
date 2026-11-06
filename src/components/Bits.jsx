@@ -48,7 +48,7 @@ export function TrackForm({ children, className, initial = '' }) {
     <input name="id" value={value} autoComplete="off" spellCheck={false}
       onChange={e => { setValue(e.target.value); setInvalid(false); }}
       className={`form-control tp-input${invalid ? ' is-invalid' : ''} ${extra}`}
-      placeholder="Enter your tracking number" aria-label="Tracking number" {...props} />
+      placeholder="Enter your 10-digit waybill number" aria-label="Tracking number" {...props} />
   );
   return <form className={className} onSubmit={submit} noValidate>{children(input)}</form>;
 }

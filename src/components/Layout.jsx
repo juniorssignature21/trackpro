@@ -24,7 +24,7 @@ export default function Layout({ bare = false }) {
 
   useEffect(() => {
     AOS.init({ duration: 700, once: true, offset: 60 });
-    initPwa();
+    try { initPwa(); } catch (err) { console.error('PWA setup failed', err); } // never take the page down
   }, []);
   useEffect(() => {
     const t = setTimeout(() => AOS.refreshHard(), 50);

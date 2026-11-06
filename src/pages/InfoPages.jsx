@@ -3,66 +3,77 @@ import { Link } from 'react-router-dom';
 import { Faq } from '../components/Bits';
 import { HELP_GROUPS } from '../content';
 import { useTitle } from '../lib/hooks';
-import { RATES } from '../lib/pricing';
 import { money } from '../lib/format';
 import { useSettings } from '../lib/settings';
 
 /* ------------------------------------------------------------------ Services */
-const SERVICES = [
-  { id: 'domestic', bg: 'var(--tp-green)', icon: 'bi-box-seam-fill', title: 'Domestic parcels', lead: 'Next-day across the country',
-    from: () => 3.99, points: ['Collection from your door or drop-off point', 'Up to 30 kg per parcel', 'Live map tracking & SMS updates', 'Free cover up to £50.00'] },
-  { id: 'international', bg: 'var(--tp-blue)', icon: 'bi-globe-americas', title: 'International', lead: '220+ countries, customs handled',
-    from: () => RATES.Economy[0] * 2.8 + 12, reverse: true,
-    points: ['Paperless customs declarations', 'Duties paid or unpaid options', 'Hub-by-hub tracking with flight legs', 'Insurance up to £10,000.00'] },
-  { id: 'express', bg: 'var(--tp-pink)', icon: 'bi-lightning-charge-fill', title: 'Same day express', lead: 'Door to door in hours',
-    from: () => 19.99, points: ['Dedicated courier, no stops', 'Real-time courier location', 'Call or chat your driver', 'Photo proof of delivery'] },
-  { id: 'freight', bg: 'var(--tp-orange)', icon: 'bi-truck-front-fill', title: 'Freight & pallets', lead: 'Heavy and bulky goods', reverse: true,
-    points: ['Full and part pallets', 'Tail-lift vehicles', 'Warehouse-to-warehouse', 'Account manager included'] },
-];
+const SERVICE_DETAILS = {
+  'Same Day': { bg: 'var(--tp-pink)', points: ['Dedicated courier, no stops', 'Book by 12:00 PM, delivered today', 'Call or chat your driver', 'Photo proof of delivery'], scope: 'Domestic' },
+  'Express 9:00': { bg: 'var(--tp-purple)', points: ['Delivered by 9:00 AM next business day', 'Ideal for contracts, samples and urgent parts', 'Major US cities and international business centers', 'Money-back on late delivery for domestic shipments'], scope: 'Domestic & international' },
+  'Express 12:00': { bg: 'var(--tp-blue)', points: ['Delivered by noon next business day', 'Time-definite at a lower premium than 9:00', 'Available to Canada, Mexico, Europe and major Asia-Pacific', 'Live tracking with courier contact'], scope: 'Domestic & international', reverse: true },
+  Express: { bg: 'var(--tp-orange)', points: ['Next business day across the US', '1–3 business days to most of the world', 'Customs clearance included', 'Duties paid by receiver (DAP) or by you (DDP)'], scope: 'Domestic & international' },
+  'Economy Select': { bg: 'var(--tp-green)', points: ['2–4 days across the US', 'Lower rates for heavier, less urgent shipments', 'Up to 150 kg per piece', 'Same tracking and value protection'], scope: 'Domestic & international', reverse: true },
+};
 
 export function Services() {
-  useTitle('Services');
-  const { currency_symbol: cur } = useSettings();
+  useTitle();
+  const { currency_symbol: cur, products } = useSettings();
   return (
     <>
       <section className="tp-page-hero">
         <div className="container">
-          <nav className="breadcrumb mb-2"><Link to="/">Home</Link>&nbsp;/&nbsp;Services</nav>
-          <h1>Every way<br />to send</h1>
-          <p className="fs-5 mt-3 mb-0" style={{ maxWidth: 560 }}>From a birthday card to a pallet of stock – pick the speed, we&apos;ll handle the rest.</p>
+          <nav className="breadcrumb mb-2" aria-label="Breadcrumb"><Link to="/">Home</Link>&nbsp;/&nbsp;Services</nav>
+          <h1>Every way<br />to ship</h1>
+          <p className="fs-5 mt-3 mb-0" style={{ maxWidth: 620 }}>From a same-day envelope across town to a 9:00 AM delivery in Frankfurt. Pick the speed, we handle pickup, customs and delivery.</p>
         </div>
       </section>
       <section className="section">
         <div className="container">
-          {SERVICES.map(s => (
-            <div className="row g-0 mb-5 svc-row bg-white" id={s.id} data-aos="fade-up" key={s.id}>
-              <div className={`col-lg-5 ${s.reverse ? 'order-lg-2' : ''}`}>
-                <div className="svc-img h-100" style={{ background: s.bg, color: '#fff' }}><i className={`bi ${s.icon}`} /></div>
+          {products.map((p, i) => {
+            const d = SERVICE_DETAILS[p.name] || { bg: 'var(--tp-ink)', points: [] };
+            return (
+              <div className="row g-0 mb-5 svc-row bg-white" id={p.code.toLowerCase()} data-aos="fade-up" key={p.name}>
+                <div className={`col-lg-5 ${i % 2 ? 'order-lg-2' : ''}`}>
+                  <div className="svc-img h-100" style={{ background: d.bg, color: '#fff' }}><i className={`bi ${p.icon}`} /></div>
+                </div>
+                <div className="col-lg-7 p-4 p-lg-5">
+                  <span className="eyebrow">From {money(p.from, cur)} · {d.scope}</span>
+                  <h2 className="display-6 fw-bold mt-3">{p.name}</h2>
+                  <p className="lead-x">{p.blurb}</p>
+                  <ul className="check-list fs-5">{d.points.map(pt => <li key={pt}>{pt}</li>)}</ul>
+                  <Link to={`/quote?service=${encodeURIComponent(p.name)}`} className="btn btn-tp-dark mt-2">Get a price <i className="bi bi-arrow-right ms-1" /></Link>
+                </div>
               </div>
-              <div className="col-lg-7 p-4 p-lg-5">
-                <span className="eyebrow">{s.from ? `From ${money(s.from(), cur)}` : 'Custom quote'}</span>
-                <h2 className="display-6 fw-bold mt-3">{s.title}</h2>
-                <p className="lead-x">{s.lead}</p>
-                <ul className="check-list fs-5">{s.points.map(p => <li key={p}>{p}</li>)}</ul>
-                <Link to={s.id === 'freight' ? '/contact?subject=Freight+quote' : `/quote${s.id === 'international' ? '?international=1' : s.id === 'express' ? '?service=Same+Day' : ''}`}
-                  className="btn btn-tp-dark mt-2">Get a quote <i className="bi bi-arrow-right ms-1" /></Link>
-              </div>
+            );
+          })}
+          <div className="row g-0 mb-5 svc-row bg-white" id="freight" data-aos="fade-up">
+            <div className="col-lg-5 order-lg-2"><div className="svc-img h-100" style={{ background: 'var(--tp-ink)', color: 'var(--tp-yellow)' }}><i className="bi bi-truck-front-fill" /></div></div>
+            <div className="col-lg-7 p-4 p-lg-5">
+              <span className="eyebrow">Custom quote</span>
+              <h2 className="display-6 fw-bold mt-3">Freight &amp; pallets</h2>
+              <p className="lead-x">Over 150 kg a piece, longer than 150 cm, or a full pallet? Our freight team quotes air and road freight within one business day.</p>
+              <ul className="check-list fs-5"><li>Full and part pallets</li><li>Liftgate and inside delivery</li><li>Air freight with customs brokerage</li><li>Dedicated account manager</li></ul>
+              <Link to="/contact?subject=Freight+quote" className="btn btn-tp-dark mt-2">Request a freight quote <i className="bi bi-arrow-right ms-1" /></Link>
             </div>
-          ))}
+          </div>
         </div>
       </section>
       <section className="section-sm" style={{ background: '#fff' }}>
         <div className="container">
-          <h2 className="display-x mb-4">Compare</h2>
+          <h2 className="display-x mb-4">Compare services</h2>
           <div className="table-responsive"><table className="table table-borderless align-middle fs-6">
-            <thead className="border-bottom border-dark border-2"><tr><th /><th>Economy</th><th>Standard</th><th>Express</th><th>Same Day</th></tr></thead>
+            <thead className="border-bottom border-dark border-2"><tr><th scope="col" />{products.map(p => <th scope="col" key={p.name}>{p.name}</th>)}</tr></thead>
             <tbody>
-              <tr><td className="fw-bold">Delivery</td><td>3–5 days</td><td>2–3 days</td><td>Next day</td><td>Today</td></tr>
-              <tr><td className="fw-bold">Live map</td>{[0, 1, 2, 3].map(i => <td key={i}><i className="bi bi-check-lg" /></td>)}</tr>
-              <tr><td className="fw-bold">Courier contact</td><td>—</td><td>—</td><td><i className="bi bi-check-lg" /></td><td><i className="bi bi-check-lg" /></td></tr>
-              <tr><td className="fw-bold">Starting price</td>{[3.99, 5.99, 9.99, 19.99].map(p => <td key={p}>{money(p, cur)}</td>)}</tr>
+              <tr><th scope="row">US delivery</th><td>Today</td><td>Next day, 9:00 AM</td><td>Next day, 12:00 PM</td><td>Next day</td><td>2–4 days</td></tr>
+              <tr><th scope="row">International</th><td>—</td><td>1–3 days, 9:00 AM*</td><td>1–3 days, 12:00 PM*</td><td>1–6 days</td><td>3–10 days</td></tr>
+              <tr><th scope="row">Courier contact</th><td><i className="bi bi-check-lg" /></td><td><i className="bi bi-check-lg" /></td><td><i className="bi bi-check-lg" /></td><td><i className="bi bi-check-lg" /></td><td>—</td></tr>
+              <tr><th scope="row">Live map tracking</th>{products.map(p => <td key={p.name}><i className="bi bi-check-lg" /></td>)}</tr>
+              <tr><th scope="row">Starting price</th>{products.map(p => <td key={p.name}>{money(p.from, cur)}</td>)}</tr>
             </tbody>
           </table></div>
+          <p className="small text-muted mb-0">Business days, from the pickup day. Book by 5:00 PM (Same Day by 12:00 PM) for pickup the same business day.
+            * Time-definite international delivery to Canada, Mexico, Europe and major Asia-Pacific business centers.
+            Prices include the current fuel surcharge; duties and taxes are extra.</p>
         </div>
       </section>
     </>
@@ -80,7 +91,7 @@ const BIZ = [
 ];
 
 export function Business() {
-  useTitle('Business');
+  useTitle();
   return (
     <>
       <section className="tp-page-hero dark">
@@ -96,9 +107,9 @@ export function Business() {
               <small className="opacity-75">This month</small>
               <div className="display-5 fw-bold">2,418</div><div>parcels shipped</div>
               <div className="progress-x my-3"><span style={{ width: '78%' }} /></div>
-              <div className="d-flex justify-content-between small"><span>On-time 99.2%</span><span>Saved £1,840.00</span></div>
+              <div className="d-flex justify-content-between small"><span>On-time 99.2%</span><span>Saved $1,840.00</span></div>
             </div>
-            <div className="sheet-card lime p-4 mb-0 d-flex justify-content-between align-items-center"><div><b>Invoice #INV-0926</b><br /><small>Due in 14 days</small></div><b className="fs-4">£6,420.50</b></div>
+            <div className="sheet-card lime p-4 mb-0 d-flex justify-content-between align-items-center"><div><b>Invoice #INV-0926</b><br /><small>Due in 14 days</small></div><b className="fs-4">$6,420.50</b></div>
           </div>
         </div></div>
       </section>
@@ -113,7 +124,7 @@ export function Business() {
       </section>
       <section className="section pt-0"><div className="container">
         <div className="tp-yellowbar"><i className="bi bi-plus-lg plus" />
-          <div><h4 className="mb-1">Shipping 100+ parcels a month?</h4><p className="mb-0 fs-5">Talk to us about volume pricing.</p></div>
+          <div><h2 className="h4 mb-1">Shipping 100+ parcels a month?</h2><p className="mb-0 fs-5">Talk to us about volume pricing.</p></div>
           <Link to="/contact?subject=Volume+pricing" className="btn btn-tp-dark">Contact sales</Link></div>
       </div></section>
     </>
@@ -122,20 +133,20 @@ export function Business() {
 
 /* ------------------------------------------------------------------ About */
 export function About() {
-  useTitle('About');
+  useTitle();
   const tiles = [
-    { v: '2019', l: 'Founded in London', bg: 'var(--tp-yellow)', c: 'var(--tp-ink)' },
-    { v: '16K+', l: 'Drop-off points', bg: 'var(--tp-ink)', c: '#fff' },
-    { v: '220', l: 'Countries', bg: 'var(--tp-blue)', c: '#fff' },
-    { v: '1,200', l: 'Team members', bg: 'var(--tp-pink)', c: '#fff' },
+    { v: '200+', l: 'Countries & territories', bg: 'var(--tp-yellow)', c: 'var(--tp-ink)' },
+    { v: '5', l: 'Express services', bg: 'var(--tp-ink)', c: '#fff' },
+    { v: '24/7', l: 'Live tracking', bg: 'var(--tp-blue)', c: '#fff' },
+    { v: 'Mon–Fri', l: 'Door-to-door pickup', bg: 'var(--tp-pink)', c: '#fff' },
   ];
   const beliefs = [
-    { icon: 'bi-eye', t: 'Radical transparency', d: 'You see what we see. Every scan, every stop, every penny.' },
-    { icon: 'bi-tree', t: 'Greener miles', d: 'Consolidated routes and EV vans in 30 cities cut emissions by 40%.' },
-    { icon: 'bi-emoji-smile', t: 'Humans first', d: 'Real support, 24/7, and couriers who are paid fairly.' },
+    { icon: 'bi-eye', t: 'Radical transparency', d: 'You see what we see: every scan, every stop and every charge, before you pay.' },
+    { icon: 'bi-stopwatch', t: 'Time-definite', d: 'Delivery dates in business days and cut-off times you can plan around.' },
+    { icon: 'bi-emoji-smile', t: 'Humans first', d: 'Real support and couriers you can reach on express shipments.' },
   ];
-  const journey = [['2019', 'First 10 couriers in London'], ['2021', 'Launched live map tracking'], ['2023', 'International network: 120 countries'],
-    ['2025', 'Digital stamped receipts & in-app payments'], ['2026', '16,000 drop points and growing']];
+  const journey = [['Quote', 'Instant price for every service, with the delivery date'], ['Book & pay', 'Addresses, contents and secure card payment online'],
+    ['Pickup', 'A courier collects from your door on the day you choose'], ['Customs', 'Paperless clearance for international shipments'], ['Delivery', 'Live map tracking to the door, with proof of delivery']];
   return (
     <>
       <section className="tp-page-hero">
@@ -148,8 +159,8 @@ export function About() {
         <div className="container"><div className="row g-4 g-lg-5 align-items-center">
           <div className="col-lg-6" data-aos="fade-right">
             <h2 className="display-x">Delivery should feel like magic, not admin.</h2>
-            <p className="lead-x mt-3">TrackPro started with a simple frustration: why could we see our bank balance to the penny, but not where our parcel was? So we built a logistics network that&apos;s as transparent as a fintech app.</p>
-            <p>Today our couriers, hubs and partners stream location updates into one live map, every payment produces a stamped receipt, and every customer can call the person carrying their parcel.</p>
+            <p className="lead-x mt-3">VDC Express Logistics started with a simple frustration: why could we see our bank balance to the penny, but not where our shipment was? So we built an express service that&apos;s as transparent as a banking app.</p>
+            <p>Our couriers, facilities and partners stream checkpoint scans into one live map, every booking is paid securely by card with a stamped receipt, and express customers can reach the person carrying their shipment.</p>
           </div>
           <div className="col-lg-6"><div className="row g-3">
             {tiles.map((t, i) => (
@@ -166,13 +177,13 @@ export function About() {
         <div className="container">
           <h2 className="display-x text-center mb-5">What we believe</h2>
           <div className="row g-4">{beliefs.map(b => (
-            <div className="col-md-4" key={b.t}><div className="tp-step"><i className={`bi ${b.icon}`} /><h4 className="mt-3">{b.t}</h4><p className="text-muted mb-0">{b.d}</p></div></div>
+            <div className="col-md-4" key={b.t}><div className="tp-step"><i className={`bi ${b.icon}`} /><h3 className="h4 mt-3">{b.t}</h3><p className="text-muted mb-0">{b.d}</p></div></div>
           ))}</div>
         </div>
       </section>
       <section className="section">
         <div className="container">
-          <h2 className="display-x mb-5">Our journey</h2>
+          <h2 className="display-x mb-5">How a shipment moves</h2>
           <ul className="timeline fs-5" style={{ maxWidth: 700 }}>
             {journey.map(([y, t]) => <li className="done" key={y}><span className="dot" /><b>{y}</b> — {t}</li>)}
           </ul>
@@ -184,7 +195,7 @@ export function About() {
 
 /* ------------------------------------------------------------------ Help */
 export function Help() {
-  useTitle('Help');
+  useTitle();
   const [q, setQ] = useState('');
   const groups = useMemo(() => {
     const term = q.trim().toLowerCase();

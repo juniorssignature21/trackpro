@@ -8,19 +8,19 @@ export const toDate = v => {
   return new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : s + 'Z');
 };
 
-export const money = (v, cur = '£') => cur + (Number(v) || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const money = (v, cur = '$') => (Number(v) < 0 ? '-' : '') + cur + Math.abs(Number(v) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const fmtDate = v => {
   const d = toDate(v);
-  return d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  return d ? d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 };
 export const fmtDateTime = v => {
   const d = toDate(v);
-  return d ? d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  return d ? d.toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 };
 export const fmtTime = v => {
   const d = toDate(v);
-  return d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+  return d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
 };
 export const fmtDay = v => {
   const d = toDate(v);
@@ -28,7 +28,7 @@ export const fmtDay = v => {
   const today = new Date(); const y = new Date(); y.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return 'Today';
   if (d.toDateString() === y.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  return d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 export const timeAgo = v => {
   const d = toDate(v);
@@ -68,7 +68,14 @@ export const STATUS_META = {
   out_for_delivery: { cls: 'st-transit', color: '#FF1FBF', icon: 'bi-signpost-split' },
   delivered: { cls: 'st-success', color: '#00C853', icon: 'bi-house-check-fill' },
   on_hold: { cls: 'st-warn', color: '#b54a00', icon: 'bi-pause-circle' },
+  attempted: { cls: 'st-warn', color: '#b54a00', icon: 'bi-door-closed' },
   exception: { cls: 'st-danger', color: '#c01d1d', icon: 'bi-exclamation-triangle-fill' },
   returned: { cls: 'st-danger', color: '#c01d1d', icon: 'bi-arrow-return-left' },
 };
 export const statusMeta = s => STATUS_META[s] || STATUS_META.pending;
+
+/** "2026-11-10" -> "Tue, Nov 10" */
+export const fmtShortDay = v => {
+  const d = toDate(v);
+  return d ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+};

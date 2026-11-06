@@ -4,13 +4,16 @@ import { api } from '../lib/api';
 import { Alert, Spinner } from '../components/Bits';
 import { useTitle } from '../lib/hooks';
 import { useSettings } from '../lib/settings';
+import CountrySelect from '../components/CountrySelect';
 import { toast } from '../lib/pwa';
 import MapPicker, { geocode } from './MapPicker';
 import { StatusBadge } from './Dashboard';
 import { EventsPanel, PaymentsPanel, PhotosPanel } from './ShipmentPanels';
 
 const DEFAULTS = {
-  tracking_number: '', status: 'pending', service_type: 'Standard', international: false,
+  tracking_number: '', status: 'pending', service_type: 'Express', international: false,
+  origin_country: 'US', dest_country: 'US', is_document: false, incoterm: 'DAP', signature_required: false,
+  insured_value: 0, customer_reference: '', chargeable_kg: 0,
   sender_name: '', sender_phone: '', sender_email: '', sender_address: '',
   receiver_name: '', receiver_phone: '', receiver_email: '', receiver_address: '',
   origin: '', origin_lat: '', origin_lng: '', destination: '', dest_lat: '', dest_lng: '',
@@ -18,7 +21,7 @@ const DEFAULTS = {
   contents: '', weight_kg: 1, length_cm: 0, width_cm: 0, height_cm: 0, pieces: 1, declared_value: 0,
   courier_name: '', courier_phone: '', vehicle: 'truck', notice: '', eta: '', shipped_at: new Date().toISOString().slice(0, 10),
 };
-const NUM = ['progress', 'weight_kg', 'length_cm', 'width_cm', 'height_cm', 'pieces', 'declared_value'];
+const NUM = ['progress', 'weight_kg', 'length_cm', 'width_cm', 'height_cm', 'pieces', 'declared_value', 'insured_value', 'chargeable_kg'];
 const COORD = ['origin_lat', 'origin_lng', 'dest_lat', 'dest_lng', 'current_lat', 'current_lng'];
 
 function toForm(sh) {
@@ -118,10 +121,20 @@ function DetailsForm({ shipment, onSaved }) {
           <Field label={`Progress shown to customer: ${f.progress}%`} col="col-md-4">
             <input type="range" className="form-range mt-2" min="0" max="100" step="1" value={f.progress} onChange={set('progress')} />
           </Field>
-          <div className="col-12"><div className="form-check form-switch">
-            <input className="form-check-input" type="checkbox" id="intl" checked={f.international} onChange={set('international')} />
-            <label className="form-check-label fw-bold" htmlFor="intl">International shipment</label>
-          </div></div>
+          <Field label="Origin country" col="col-md-4"><CountrySelect className="form-select" value={f.origin_country || 'US'} onChange={set('origin_country')} /></Field>
+          <Field label="Destination country" col="col-md-4" hint={f.origin_country !== f.dest_country ? 'International shipment' : 'Domestic shipment'}>
+            <CountrySelect className="form-select" value={f.dest_country || 'US'} onChange={set('dest_country')} /></Field>
+          <Field label="Duties & taxes" col="col-md-4">
+            <select className="form-select" value={f.incoterm} onChange={set('incoterm')} disabled={f.origin_country === f.dest_country}>
+              <option value="DAP">DAP – receiver pays</option><option value="DDP">DDP – shipper pays</option>
+            </select></Field>
+          <div className="col-12 d-flex flex-wrap gap-4">
+            <div className="form-check form-switch"><input className="form-check-input" type="checkbox" id="isdoc" checked={f.is_document} onChange={set('is_document')} />
+              <label className="form-check-label fw-bold" htmlFor="isdoc">Documents only</label></div>
+            <div className="form-check form-switch"><input className="form-check-input" type="checkbox" id="sigreq" checked={f.signature_required} onChange={set('signature_required')} />
+              <label className="form-check-label fw-bold" htmlFor="sigreq">Direct signature required</label></div>
+            {shipment?.source === 'online' && <span className="tp-badge st-info"><i className="bi bi-credit-card me-1" />Booked &amp; paid online</span>}
+          </div>
         </div>
       </div>
 
@@ -129,8 +142,8 @@ function DetailsForm({ shipment, onSaved }) {
         <h5 className="mb-3">Route &amp; live position</h5>
         <div className="row g-3">
           <div className="col-lg-5">
-            <div className="mb-3"><label className="form-label">Origin</label><PlaceInput {...{ f, set, setMany }} name="origin" latKey="origin_lat" lngKey="origin_lng" placeholder="e.g. London, UK" /></div>
-            <div className="mb-3"><label className="form-label">Destination</label><PlaceInput {...{ f, set, setMany }} name="destination" latKey="dest_lat" lngKey="dest_lng" placeholder="e.g. Manchester, UK" /></div>
+            <div className="mb-3"><label className="form-label">Origin</label><PlaceInput {...{ f, set, setMany }} name="origin" latKey="origin_lat" lngKey="origin_lng" placeholder="e.g. Houston, TX" /></div>
+            <div className="mb-3"><label className="form-label">Destination</label><PlaceInput {...{ f, set, setMany }} name="destination" latKey="dest_lat" lngKey="dest_lng" placeholder="e.g. Lagos, Nigeria" /></div>
             <div><label className="form-label">Current location</label><PlaceInput {...{ f, set, setMany }} name="current_location" latKey="current_lat" lngKey="current_lng" placeholder="Where the parcel is now" /></div>
           </div>
           <div className="col-lg-7">
@@ -164,8 +177,11 @@ function DetailsForm({ shipment, onSaved }) {
         <div className="row g-3">
           <Field label="Contents" col="col-md-6"><input className="form-control" value={f.contents} onChange={set('contents')} /></Field>
           <Field label="Pieces" col="col-6 col-md-3"><input type="number" min="1" className="form-control" value={f.pieces} onChange={set('pieces')} /></Field>
-          <Field label="Declared value" col="col-6 col-md-3"><input type="number" min="0" step="0.01" className="form-control" value={f.declared_value} onChange={set('declared_value')} /></Field>
-          {[['weight_kg', 'Weight (kg)', '0.1'], ['length_cm', 'Length (cm)', '1'], ['width_cm', 'Width (cm)', '1'], ['height_cm', 'Height (cm)', '1']].map(([k, l, st]) => (
+          <Field label="Customs value" col="col-6 col-md-3"><input type="number" min="0" step="0.01" className="form-control" value={f.declared_value} onChange={set('declared_value')} /></Field>
+          <Field label="Protected value" col="col-6 col-md-3" hint="Shipment value protection"><input type="number" min="0" step="0.01" className="form-control" value={f.insured_value} onChange={set('insured_value')} /></Field>
+          <Field label="Chargeable weight (kg)" col="col-6 col-md-3"><input type="number" min="0" step="0.5" className="form-control" value={f.chargeable_kg} onChange={set('chargeable_kg')} /></Field>
+          <Field label="Customer reference" col="col-md-6"><input className="form-control" maxLength={60} value={f.customer_reference} onChange={set('customer_reference')} /></Field>
+          {[['weight_kg', 'Total weight (kg)', '0.1'], ['length_cm', 'Length (cm)', '1'], ['width_cm', 'Width (cm)', '1'], ['height_cm', 'Height (cm)', '1']].map(([k, l, st]) => (
             <Field key={k} label={l} col="col-6 col-md-3"><input type="number" min="0" step={st} className="form-control" value={f[k]} onChange={set(k)} /></Field>
           ))}
         </div>
@@ -175,7 +191,7 @@ function DetailsForm({ shipment, onSaved }) {
         <h5 className="mb-3">Courier &amp; tracking page</h5>
         <div className="row g-3">
           <Field label="Courier name" col="col-md-4"><input className="form-control" value={f.courier_name} onChange={set('courier_name')} /></Field>
-          <Field label="Courier phone" col="col-md-4" hint="Shown to customers on Express & Same Day only"><input className="form-control" value={f.courier_phone} onChange={set('courier_phone')} /></Field>
+          <Field label="Courier phone" col="col-md-4" hint="Shown to customers on Same Day and Express services"><input className="form-control" value={f.courier_phone} onChange={set('courier_phone')} /></Field>
           <Field label="Vehicle icon" col="col-md-4">
             <select className="form-select" value={f.vehicle} onChange={set('vehicle')}>
               {[['truck', 'Truck'], ['van', 'Van'], ['bike', 'Bike'], ['plane', 'Plane'], ['ship', 'Ship']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Logo from '../components/Logo';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth';
 import { Alert } from '../components/Bits';
@@ -32,7 +33,7 @@ export default function Login() {
   return (
     <div className="adm adm-login">
       <form className="box" onSubmit={submit}>
-        <img src="/branding/logo_931a74e398.png" alt="TrackPro" style={{ height: 46 }} className="mb-4" />
+        <Logo height={46} className="mb-4" />
         <h1 className="h3 fw-bold mb-1">Admin sign in</h1>
         <p className="text-muted mb-4">Manage shipments, tracking updates and receipts.</p>
         <Alert onClose={() => setError('')}>{error}</Alert>

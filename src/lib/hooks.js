@@ -1,10 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { pageMeta, SITE } from '../seo';
 
-export function useTitle(title) {
-  useEffect(() => {
-    document.title = title ? `${title} – TrackPro` : 'TrackPro – Send, Track & Pay for Parcels in Real Time';
-  }, [title]);
+function setMeta(attr, key, content) {
+  let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+  el.setAttribute('content', content);
 }
+function setCanonical(href) {
+  let el = document.head.querySelector('link[rel="canonical"]');
+  if (!el) { el = document.createElement('link'); el.rel = 'canonical'; document.head.appendChild(el); }
+  el.href = href;
+}
+
+/**
+ * Page <title>, description, canonical URL, robots and social tags. Defaults come from src/seo.js for the
+ * current path (the same data the build step bakes into static HTML for crawlers); `title` overrides it.
+ */
+export function useSeo(title, { description, noindex } = {}) {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const meta = pageMeta(pathname);
+    const fullTitle = title ? `${title} | ${SITE.name}` : meta.title;
+    const desc = description || meta.description;
+    const url = SITE.url + (meta.path ?? pathname);
+    document.title = fullTitle;
+    setMeta('name', 'description', desc);
+    setMeta('name', 'robots', noindex || meta.noindex ? 'noindex, nofollow' : 'index, follow');
+    setMeta('property', 'og:title', fullTitle);
+    setMeta('property', 'og:description', desc);
+    setMeta('property', 'og:url', url);
+    setMeta('name', 'twitter:title', fullTitle);
+    setMeta('name', 'twitter:description', desc);
+    setCanonical(url);
+  }, [title, description, noindex, pathname]);
+}
+
+export const useTitle = (title, opts) => useSeo(title, opts);
 
 /** Adds a class to <body> while the component is mounted. */
 export function useBodyClass(cls) {

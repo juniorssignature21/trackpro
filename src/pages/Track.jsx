@@ -30,16 +30,14 @@ function SearchHero({ error, initial }) {
             </div>
           )}
         </TrackForm>
-        <p className="mt-3 mb-0 small">Try a demo: {['TP26AB100245', 'TP26KX554120', 'TP26ZR781003'].map((n, i) => (
-          <span key={n}>{i > 0 && ' · '}<Link className="mono fw-bold" to={`/track/${n}`}>{n}</Link></span>
-        ))}</p>
+        <p className="mt-3 mb-0 small">Your waybill number has 10 digits and is on your booking confirmation and receipt, e.g. <span className="mono fw-bold">4829137563</span>.</p>
       </div></div></div>
     </section>
   );
 }
 
 export function TrackSearch() {
-  useTitle('Track a parcel');
+  useTitle();
   const [params] = useSearchParams();
   const legacy = params.get('id'); // old track.php?id=… links
   if (legacy) return <Navigate to={`/track/${encodeURIComponent(legacy.trim())}`} replace />;

@@ -1,6 +1,6 @@
-/* TrackPro service worker: offline shell + cached static assets. API calls always go to the network. */
-const CACHE = 'trackpro-v1';
-const SHELL = ['/', '/manifest.webmanifest', '/branding/appicon_5fdbf0afc4-192.png', '/branding/logo_931a74e398.png'];
+/* VDC Express service worker: offline shell + cached static assets. API calls always go to the network. */
+const CACHE = 'vdc-express-v2';
+const SHELL = ['/', '/manifest.webmanifest', '/branding/vdc-icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -17,7 +17,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin')) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin') || url.pathname.startsWith('/book')) return;
 
   // pages: network first, fall back to cached shell
   if (req.mode === 'navigate') {

@@ -1,4 +1,4 @@
-/* TrackPro PWA: service worker + "Install app" experience for Android, iPhone and desktop.
+/* VDC Express PWA: service worker + "Install app" experience for Android, iPhone and desktop.
    Ported from the original assets/js/pwa.js. Works through delegated listeners on [data-install],
    [data-install-close] and [data-banner-close], so any React component can render those controls. */
 let started = false;
@@ -16,6 +16,7 @@ export function initPwa() {
     set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
   };
   let deferred = null;
+  let bannerTimer; // declared up front: maybeBanner() can run before the rest of this function
 
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
@@ -34,7 +35,9 @@ export function initPwa() {
 
   const narrow = window.matchMedia('(max-width: 991px)');
   if (isIOS || narrow.matches) { show(); maybeBanner(); }
-  narrow.addEventListener('change', e => { if (e.matches) { show(); maybeBanner(); } });
+  const onNarrow = e => { if (e.matches) { show(); maybeBanner(); } };
+  if (narrow.addEventListener) narrow.addEventListener('change', onNarrow);
+  else narrow.addListener?.(onNarrow); // iOS Safari < 14
 
   function install() {
     if (!deferred) { openSheet(); return; }
@@ -57,7 +60,6 @@ export function initPwa() {
   }
 
   // smart banner on phones (once a week at most, never on the full-screen map or in admin)
-  let bannerTimer;
   function maybeBanner() {
     clearTimeout(bannerTimer);
     bannerTimer = setTimeout(() => {
