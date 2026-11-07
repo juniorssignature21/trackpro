@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert } from '../components/Bits';
+import CardPayment from '../components/CardPayment';
 import { api } from '../lib/api';
 import { fmtShortDay, money, toDate } from '../lib/format';
 import { useSeo } from '../lib/hooks';
@@ -62,6 +63,8 @@ export function Book() {
   const [extra, setExtra] = useState({ contents: '', customs_value: '', customer_reference: '', accept_terms: false });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [payment, setPayment] = useState(null); // {reference, client_secret, publishable_key, amount} once booked
+  const navigate = useNavigate();
   const { quote, error: quoteError, loading } = useLiveQuote(f || {}, 0);
 
   const option = quote?.options.find(o => o.product === f?.product);
@@ -73,6 +76,7 @@ export function Book() {
   useEffect(() => { if (f) saveDraft(f); }, [f]);
 
   if (!draft) return <Navigate to="/quote" replace />;
+  const Wrapper = payment ? 'div' : 'form';
   const intl = f.origin_country !== f.dest_country;
   const needsCustoms = intl && !f.is_document;
 
@@ -85,13 +89,17 @@ export function Book() {
         contents: extra.contents, customs_value: +extra.customs_value || 0,
         customer_reference: extra.customer_reference, accept_terms: extra.accept_terms,
       });
-      window.location.assign(res.authorization_url); // Paystack hosted card checkout
+      setPayment(res); // show the card form on this page
+      setBusy(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
       setBusy(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+  const paid = () => navigate(`/book/confirm?reference=${encodeURIComponent(payment.reference)}`);
+  const billing = { name: shipper.name, email: shipper.email, phone: shipper.phone };
 
   return (
     <>
@@ -104,11 +112,24 @@ export function Book() {
       </section>
 
       <section className="section">
-        <form className="container" onSubmit={submit}>
+        <Wrapper className="container" {...(payment ? {} : { onSubmit: submit })}>
           <div className="row g-4">
             <div className="col-lg-8">
               <Alert onClose={() => setError('')}>{error}</Alert>
               {!st.payments_enabled && <Alert kind="warning">Online card payments aren&apos;t switched on yet. <Link to="/contact?subject=Booking">Contact us</Link> to book this shipment.</Alert>}
+              {payment ? (
+                <div className="tp-card mb-4">
+                  <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                      <h2 className="h4 mb-1"><i className="bi bi-credit-card me-2" />Pay by card</h2>
+                      <small className="text-muted">Booking <span className="mono">{payment.reference}</span> · {shipper.name}, {shipper.city} → {receiver.name}, {receiver.city}</small>
+                    </div>
+                    <button type="button" className="btn btn-link p-0 small" onClick={() => setPayment(null)}>Edit details</button>
+                  </div>
+                  <CardPayment payment={payment} currency={cur} billing={billing} onPaid={paid} />
+                  <p className="small text-muted mt-3 mb-0"><i className="bi bi-shield-lock me-1" />Your card details go directly to our payment processor, Stripe, over an encrypted connection and are never stored on our servers. Your bank may ask you to approve the payment.</p>
+                </div>
+              ) : (<>
               <PartyFields title="Ship from" icon="bi-box-arrow-up" prefix="shipping" value={shipper} onChange={setShipper} country={f.origin_country} />
               <PartyFields title="Ship to" icon="bi-geo-alt" prefix="billing" value={receiver} onChange={setReceiver} country={f.dest_country} />
 
@@ -141,6 +162,7 @@ export function Book() {
                   </label>
                 </div>
               </div>
+              </>)}
             </div>
 
             <div className="col-lg-4">
@@ -151,15 +173,17 @@ export function Book() {
                 {(quoteError || (option && !option.available)) && <div className="alert alert-warning small">{quoteError || option.reason}. <Link to="/quote">Change shipment</Link></div>}
                 {option?.lines.map(ln => <div className="row-i" key={ln.code}><span>{ln.label}</span><b>{money(ln.amount, cur)}</b></div>)}
                 {option?.tax > 0 && <div className="row-i"><span>{st.tax_label}</span><b>{money(option.tax, cur)}</b></div>}
-                <button className="btn btn-tp w-100 mt-4 btn-pill" disabled={busy || loading || !option?.available || !st.payments_enabled}>
-                  {busy ? <><span className="spinner-border spinner-border-sm me-2" />Opening secure checkout…</> : <><i className="bi bi-credit-card me-2" />Pay {option?.available ? money(option.total, cur) : ''} by card</>}
-                </button>
-                <p className="small text-white-50 mt-3 mb-0"><i className="bi bi-lock-fill" /> You&apos;ll pay on a secure Paystack page. We accept debit and credit cards only. Your shipment is booked as soon as the payment is approved.</p>
+                {!payment && (
+                  <button className="btn btn-tp w-100 mt-4 btn-pill" disabled={busy || loading || !option?.available || !st.payments_enabled}>
+                    {busy ? <><span className="spinner-border spinner-border-sm me-2" />Preparing payment…</> : <><i className="bi bi-credit-card me-2" />Continue to payment</>}
+                  </button>
+                )}
+                <p className="small text-white-50 mt-3 mb-0"><i className="bi bi-lock-fill" /> Pay securely by debit or credit card right here on this page. Your shipment is booked as soon as the payment is approved.</p>
                 <Link to="/quote" className="btn btn-link text-white-50 w-100 mt-2">Change shipment</Link>
               </div>
             </div>
           </div>
-        </form>
+        </Wrapper>
       </section>
     </>
   );
@@ -168,11 +192,12 @@ export function Book() {
 export function BookConfirm() {
   useSeo('Payment', { noindex: true });
   const [params] = useSearchParams();
-  const ref = params.get('reference') || params.get('trxref') || '';
+  const ref = params.get('reference') || params.get('payment_intent') || '';
   const { currency_symbol: cur } = useSettings();
   const [b, setB] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [payment, setPayment] = useState(null);
 
   const check = () => {
     setError('');
@@ -182,9 +207,17 @@ export function BookConfirm() {
   useEffect(() => { if (b?.status === 'paid') { try { sessionStorage.removeItem('vdc_booking_draft'); } catch { /* ignore */ } } }, [b?.status]);
 
   const retry = async () => {
-    setBusy(true);
-    try { window.location.assign((await api.retryBooking(b.reference)).authorization_url); } catch (err) { setError(err.message); setBusy(false); }
+    setBusy(true); setError('');
+    try {
+      const res = await api.retryBooking(b.reference);
+      if (res.client_secret) setPayment(res); else setB(res); // already paid
+    } catch (err) { setError(err.message); }
+    setBusy(false);
   };
+  const paidAgain = () => { setPayment(null); setB(null); check(); };
+  const payForm = payment && (
+    <div className="text-start mt-4"><CardPayment payment={payment} currency={cur} onPaid={paidAgain} /></div>
+  );
 
   let body;
   if (!ref) body = <p className="lead-x">No payment reference found. <Link to="/quote">Start a new booking</Link>.</p>;
@@ -212,10 +245,12 @@ export function BookConfirm() {
         <h2 className="fw-bold">Payment not completed</h2>
         <p className="lead-x">{b.gateway_message || 'The card payment was cancelled or declined.'} You haven&apos;t been charged for this attempt.</p>
         <Alert>{error}</Alert>
-        <div className="d-flex gap-2 justify-content-center flex-wrap mt-4">
-          <button type="button" className="btn btn-tp-dark" disabled={busy} onClick={retry}>{busy ? <span className="spinner-border spinner-border-sm" /> : <>Try another card</>}</button>
-          <Link to="/contact?subject=Booking+payment" className="btn btn-outline-dark rounded-0 fw-bold px-4">Contact us</Link>
-        </div>
+        {payForm || (
+          <div className="d-flex gap-2 justify-content-center flex-wrap mt-4">
+            <button type="button" className="btn btn-tp-dark" disabled={busy} onClick={retry}>{busy ? <span className="spinner-border spinner-border-sm" /> : <>Try another card</>}</button>
+            <Link to="/contact?subject=Booking+payment" className="btn btn-outline-dark rounded-0 fw-bold px-4">Contact us</Link>
+          </div>
+        )}
       </>
     );
   } else {
@@ -223,10 +258,13 @@ export function BookConfirm() {
       <>
         <h2 className="fw-bold">Waiting for your bank</h2>
         <p className="lead-x">Your payment for booking <b className="mono">{b.reference}</b> hasn&apos;t been confirmed yet.</p>
-        <div className="d-flex gap-2 justify-content-center flex-wrap mt-4">
-          <button type="button" className="btn btn-tp-dark" onClick={check}>Check again</button>
-          <button type="button" className="btn btn-outline-dark rounded-0 fw-bold px-4" disabled={busy} onClick={retry}>Pay now</button>
-        </div>
+        <Alert>{error}</Alert>
+        {payForm || (
+          <div className="d-flex gap-2 justify-content-center flex-wrap mt-4">
+            <button type="button" className="btn btn-tp-dark" onClick={check}>Check again</button>
+            <button type="button" className="btn btn-outline-dark rounded-0 fw-bold px-4" disabled={busy} onClick={retry}>Pay now</button>
+          </div>
+        )}
       </>
     );
   }

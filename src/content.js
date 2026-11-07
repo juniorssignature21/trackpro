@@ -30,7 +30,7 @@ export const HELP_GROUPS = [
     id: 'payments', icon: 'bi-receipt', title: 'Payments & receipts', items: [
       { q: 'How do I get my receipt?', a: 'Open the Receipts page and enter your tracking or receipt number. You can print it or save it as a PDF.' },
       { q: 'What do the stamps mean?', a: 'PAID: fully paid. PART PAID: deposit received. CUSTOMS CLEARED: duties settled. REFUNDED: money returned. UNPAID: awaiting payment.' },
-      { q: 'Which payment methods do you accept?', a: 'Online bookings are paid by debit or credit card only (Visa and Mastercard) on a secure Paystack checkout. Business account customers can be invoiced monthly.' },
+      { q: 'Which payment methods do you accept?', a: 'Online bookings are paid by debit or credit card only (Visa, Mastercard, American Express, Discover and more), entered securely on our booking page and processed by Stripe. Business account customers can be invoiced monthly.' },
       { q: 'My card payment failed', a: 'You are not charged for a failed or cancelled attempt. Open the link on the payment page to try another card, or contact us with your booking reference.' },
     ],
   },

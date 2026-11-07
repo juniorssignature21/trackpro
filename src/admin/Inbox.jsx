@@ -88,7 +88,7 @@ export function Bookings() {
           <option value="">All</option><option value="paid">Paid</option><option value="awaiting_payment">Awaiting payment</option><option value="failed">Failed</option>
         </select>
       </div>
-      <p className="text-muted small">Customers book and pay by card on the website. A shipment is created automatically once Paystack confirms the payment.</p>
+      <p className="text-muted small">Customers book and pay by card on the website. Card payments are taken on the booking page through Stripe; a shipment is created automatically once Stripe confirms the payment.</p>
       <Alert onClose={() => setError('')}>{error}</Alert>
       {!rows ? <Spinner /> : !rows.length ? <div className="adm-card text-muted">No online bookings yet.</div> : rows.map(b => {
         const d = b.details || {};
